@@ -145,6 +145,12 @@ jobs:
             | Set-Content -Path iso-auto-downloader.json -NoNewline
 
           git clone "https://x-access-token:$($env:HOMEBREW_TAP_GITHUB_TOKEN)@github.com/arnaudcharles/scoop-bucket.git" scoop-tap
+          if ($LASTEXITCODE -ne 0) {
+            # arnaudcharles/scoop-bucket doesn't exist yet — nothing to push
+            # to, not a real failure.
+            Write-Host "scoop-bucket repo not found (yet), skipping Scoop manifest publish"
+            exit 0
+          }
           New-Item -ItemType Directory -Force -Path scoop-tap/bucket | Out-Null
           Copy-Item iso-auto-downloader.json scoop-tap/bucket/iso-auto-downloader.json -Force
 
