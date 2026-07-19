@@ -1,44 +1,105 @@
-# Contributing
+# 🧩 Contributing Guide
 
-## Setup
+Thank you for your interest in contributing to ISO Auto Downloader. This guide explains how to set up your environment, work on the codebase, and submit changes in a clean and consistent way.
 
-Requires Go, Node.js, and the [Wails CLI](https://wails.io/docs/gettingstarted/installation) (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`).
+## 🚀 Set up your environment
 
-```sh
-wails dev          # live development with hot reload
-go test ./...       # run provider/download/config unit tests
+Before you start, make sure you have the required tools installed:
+
+- Go
+- Node.js
+- The Wails CLI
+
+Install the Wails CLI with:
+
+```bash
+go install github.com/wailsapp/wails/v2/cmd/wails@latest
+```
+
+Then you can run the app locally in development mode:
+
+```bash
+wails dev
+```
+
+Useful checks before submitting changes:
+
+```bash
+go test ./...
 go vet ./...
 ```
 
-## Adding a native ISO provider
+## 🧱 Project structure
 
-Providers live in `internal/provider/<name>/` and implement the
-`provider.Provider` interface (`internal/provider/provider.go`): `ID`,
-`Name`, `Category`, `Variants`, `Check`, `Download`, and `LocalVersion`. See
-`internal/provider/ubuntu`, `internal/provider/debian`, and
-`internal/provider/memtest86plus` for reference implementations, and
-[docs/architecture.md](docs/architecture.md) for the design this contract
-follows.
+The project is organized around a few key areas:
+
+- `internal/provider/` contains the native ISO providers
+- `internal/download/` handles download and verification flows
+- `internal/config/` manages configuration state
+- `frontend/` contains the desktop UI built with Wails/React
+
+If you are making changes to the app behavior, it is usually helpful to inspect the relevant provider or core package first.
+
+## ✍️ Adding a native ISO provider
+
+Providers live in `internal/provider/<name>/` and implement the `provider.Provider` interface defined in `internal/provider/provider.go`.
 
 Each provider should:
 
-- Self-register via `provider.Register(...)` in an `init()` function.
-- Keep any base URL as a package-level `var` (not `const`) so tests can
-  point it at an `httptest.Server`.
-- Implement `LocalVersion(filename, variant)` by adapting the same regex
-  already used in `Check`/`Download` to match a bare filename instead of an
-  href — this is what lets the app detect ISOs already on disk.
-- Ship a `_test.go` with an `httptest`-mocked check, download, and a couple
-  of `LocalVersion` cases (a match and a near-miss), per the existing
-  providers.
+- self-register with `provider.Register(...)` inside an `init()` function
+- keep its base URL as a package-level `var` rather than `const` so tests can point it at an `httptest.Server`
+- implement `LocalVersion(filename, variant)` by adapting the same regex used in `Check` or `Download` to match a bare filename
+- ship a `_test.go` file covering the check, download, and `LocalVersion` behavior
 
-When implementing a new provider, find the upstream project's official
-download page and mirror layout, work out its check/download URLs and
-regexes, then implement them natively in Go.
+A good reference is the existing providers in `internal/provider/ubuntu`, `internal/provider/debian`, and `internal/provider/memtest86plus`.
 
-## Custom ISOs and community sharing
+When implementing a new provider, the workflow is usually:
 
-The custom-ISO scripting system (Step 2 of the project) isn't implemented
-yet. Once it lands, this section will cover the review process for
-community-submitted custom ISO definitions, since importing one means
-trusting the scripts/URLs it contains.
+1. find the official upstream download page
+2. identify the latest-version detection logic
+3. extract the download URL pattern and any necessary regexes
+4. implement the provider natively in Go
+5. add tests that cover the main success and edge cases
+
+## 🧪 Testing
+
+Before submitting a pull request, make sure your changes are covered and still pass the existing test suite:
+
+```bash
+go test ./...
+```
+
+If you add or change behavior, prefer updating or adding tests rather than leaving the change unverified.
+
+## 🧹 Code style
+
+A few simple conventions help keep the codebase readable:
+
+- keep code clear and explicit
+- prefer small, focused functions
+- follow the existing Go style already used in the project
+- document public functions and non-obvious behavior when needed
+
+## 💡 Custom ISOs and community sharing
+
+The custom ISO scripting system is not implemented yet. Once it is added, this section will cover how community-submitted custom ISO definitions should be reviewed and validated, since importing them means trusting the URLs and scripts they contain.
+
+## 🧭 Creating a pull request
+
+Once your branch is ready:
+
+1. commit your changes clearly
+2. push your branch to GitHub
+3. open a pull request with a concise description of what changed
+
+A good PR description should include:
+
+- a summary of the change
+- the main files or areas affected
+- any testing performed
+
+## 🔍 Review process
+
+After opening a pull request, be ready to discuss the change and adjust it if needed. Feedback is part of the process, and thoughtful iterations help keep the project consistent and maintainable.
+
+Thank you for contributing to ISO Auto Downloader. Your help makes the project better.

@@ -11,9 +11,17 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-blue" alt="Platform" />
-  <img src="https://img.shields.io/badge/Stack-Go%20%2B%20Wails-00ADD8" alt="Stack" />
-  <img src="https://img.shields.io/badge/License-GPL--2.0--or--later-green" alt="License" />
+  <a href="https://github.com/qoomon/starline">
+    <img src="https://starlines.qoo.monster/assets/arnaudcharles/iso-auto-downloader" alt="starline" />
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-%20macOS%20%7C%20%20Windows-blue" alt="Platform" />
+  <img src="https://img.shields.io/badge/License-GPL%202.0-green" alt="License" />
+  <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white&labelColor=2C3E50" alt="Go" />
+  <img src="https://img.shields.io/github/stars/arnaudcharles/iso-auto-downloader?style=flat-square&logo=github&color=FFD700&labelColor=2C3E50" alt="GitHub Stars" />
+  <img src="https://img.shields.io/github/v/release/arnaudcharles/iso-auto-downloader" alt="GitHub Release" />
 </p>
 
 ## 👀 What it looks like
@@ -87,7 +95,7 @@ scoop install arnaudcharles/iso-auto-downloader
 
 You can also install it from Chocolatey:
 
-- [iso-auto-downloader 0.1.0 on Chocolatey Community](https://community.chocolatey.org/packages/iso-auto-downloader/0.1.0)
+[iso-auto-downloader 0.1.0 on Chocolatey Community](https://community.chocolatey.org/packages/iso-auto-downloader/0.1.0)
 
 Or download a release artifact from [GitHub Releases](https://github.com/arnaudcharles/iso-auto-downloader/releases).
 
@@ -107,15 +115,12 @@ wails dev
 
 The app follows a simple workflow:
 
-1. Discover the available ISO sources
-2. Check the latest version for each provider
-3. Download the selected file if needed
-4. Verify the downloaded payload
-5. Store it in the configured destination folder
+1. Go to the settings to filter ISO and flavor you want
+2. Select the path of your choice (eg: Zalman)
+3. Check the latest version, it will look existing ISO
+4. Download the selected file if needed
+5. Verify the downloaded payload if you want
 
-## 🧭 Project status
-
-This repository is currently in active development. The first milestone focuses on a solid macOS MVP, with broader provider coverage and Windows packaging planned next.
 
 ## 🤝 Contributing
 
@@ -125,4 +130,4 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## 📄 License
 
-This project is licensed under the GPL-2.0-or-later license.
+This project is licensed under the GPL-2.0 license.
