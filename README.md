@@ -64,14 +64,32 @@ Keeping your bootable ISOs up to date is often a manual and repetitive task. Thi
 
 ### macOS
 
-The macOS experience is the current focus of the project. You can either:
+#### Homebrew
 
-- download a release artifact from GitHub Releases, or
-- install from a Homebrew Cask once the packaging is published
+```bash
+brew install --cask arnaudcharles/tap/iso-auto-downloader
+```
+
+Or download a release artifact from [GitHub Releases](https://github.com/arnaudcharles/iso-auto-downloader/releases).
 
 ### Windows
 
-Windows support is planned for a later step, but the app is being designed so the shared business logic can be reused across platforms.
+#### Scoop
+
+If you use Scoop, you can install it with:
+
+```powershell
+scoop bucket add arnaudcharles https://github.com/arnaudcharles/scoop-bucket
+scoop install arnaudcharles/iso-auto-downloader
+```
+
+#### Chocolatey
+
+You can also install it from Chocolatey:
+
+- [iso-auto-downloader 0.1.0 on Chocolatey Community](https://community.chocolatey.org/packages/iso-auto-downloader/0.1.0)
+
+Or download a release artifact from [GitHub Releases](https://github.com/arnaudcharles/iso-auto-downloader/releases).
 
 ### Build from source
 
