@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  go:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # main.go embeds frontend/dist directly (`//go:embed all:frontend/dist`),
+      # so it has to exist — with at least one file in it — before `go vet`/
+      # `go test` can even compile the package, on a fresh checkout where
+      # frontend/dist is gitignored and doesn't exist yet.
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - run: go vet ./...
+      - run: go test ./... -v
+      # "latest" resolved to a golangci-lint binary built with go1.24, which
+      # can't load a config targeting this repo's go 1.25.0 — pinning to a
+      # version confirmed (locally: golangci-lint v2.12.2, built go1.26.2)
+      # to actually support it.
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: v2.12.2
+
+  frontend:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build

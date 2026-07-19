@@ -1,0 +1,32 @@
+# Build output
+build/bin
+node_modules
+frontend/dist
+dist/
+
+# Wails only (re)generates build/windows/icon.ico from build/appicon.png
+# when it's missing — a committed one goes stale forever the moment
+# appicon.png changes again. Left ungenerated so it's always freshly
+# regenerated from the real source of truth on every build.
+build/windows/icon.ico
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Local env / secrets
+.env
+.env.local
+
+# Go test/coverage artifacts
+*.test
+coverage.out
+coverage.html
+
+# Claude Code project notes — local working context, not meant to be public
+CLAUDE.md

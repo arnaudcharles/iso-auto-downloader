@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>iso-auto-downloader</id>
+    <version>0.1.0</version>
+    <packageSourceUrl>https://github.com/arnaudcharles/iso-auto-downloader</packageSourceUrl>
+    <owners>arnaudcharles</owners>
+    <title>ISO Auto Downloader</title>
+    <authors>Arnaud Charles</authors>
+    <projectUrl>https://github.com/arnaudcharles/iso-auto-downloader</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/arnaudcharles/iso-auto-downloader/main/media/logo.png</iconUrl>
+    <copyright>Arnaud Charles</copyright>
+    <licenseUrl>https://github.com/arnaudcharles/iso-auto-downloader/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/arnaudcharles/iso-auto-downloader</projectSourceUrl>
+    <docsUrl>https://github.com/arnaudcharles/iso-auto-downloader/blob/main/README.md</docsUrl>
+    <bugTrackerUrl>https://github.com/arnaudcharles/iso-auto-downloader/issues</bugTrackerUrl>
+    <tags>iso downloader linux windows checksum diagnostic-tools desktop wails</tags>
+    <summary>Checks for and downloads the latest ISOs for Linux, Windows, and diagnostic tools, with checksum verification</summary>
+    <description>ISO Auto Downloader is a native desktop app that checks for and downloads the latest ISO images from Linux distributions, Windows, diagnostic and disk-utility tool providers — with checksum verification and resumable downloads.
+
+This package downloads the official release archive directly from the project's GitHub Releases page and verifies it against the published SHA256 checksum before installing.</description>
+    <releaseNotes>https://github.com/arnaudcharles/iso-auto-downloader/releases/tag/v0.1.0</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

@@ -1,0 +1,21 @@
+cask "iso-auto-downloader" do
+  version "__VERSION__"
+  sha256 "__SHA256__"
+
+  url "https://github.com/arnaudcharles/iso-auto-downloader/releases/download/v#{version}/iso-auto-downloader_#{version}_macOS_universal.zip"
+  name "ISO Auto Downloader"
+  desc "Desktop app that checks for and downloads the latest ISOs from Linux, BSD, Windows and diagnostic-tool providers"
+  homepage "https://github.com/arnaudcharles/iso-auto-downloader"
+
+  app "ISO Auto Downloader.app"
+
+  caveats <<~EOS
+    This build is ad-hoc signed, not notarized. On first launch, if
+    Gatekeeper blocks it, either right-click the app and choose Open,
+    or run: xattr -d com.apple.quarantine "/Applications/ISO Auto Downloader.app"
+  EOS
+
+  zap trash: [
+    "~/Library/Application Support/iso-auto-downloader",
+  ]
+end

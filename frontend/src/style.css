@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* Dark mode is toggled by adding/removing .dark on <html> (see App.tsx),
+   instead of Tailwind's default prefers-color-scheme media query, so the
+   in-app light/dark toggle can override the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+    font-family: "Nunito";
+    font-style: normal;
+    font-weight: 400;
+    src: local(""),
+    url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
+}
+
+@theme {
+    --font-sans: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+}
+
+html, body, #root {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+}

@@ -1,0 +1,164 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # GoReleaser's own homebrew_casks pipe can't be used here: it requires
+      # a real goos/goarch-tagged archive, and ours is a "meta" archive (see
+      # .goreleaser.yaml) with none. This does the same job by hand, reusing
+      # the exact zip GoReleaser just uploaded. Skipped entirely until the
+      # one-time setup (an empty arnaudcharles/homebrew-tap repo + this
+      # secret) exists — see README/CONTRIBUTING for the walkthrough.
+      - name: Publish Homebrew Cask
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The "secrets" context can't be referenced in a step's `if:` at
+          # all (GitHub Actions rejects the workflow file outright), so the
+          # skip-when-unset check has to happen here in the script instead.
+          if [ -z "${HOMEBREW_TAP_GITHUB_TOKEN:-}" ]; then
+            echo "HOMEBREW_TAP_GITHUB_TOKEN not set, skipping Homebrew Cask publish"
+            exit 0
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          zip_name="iso-auto-downloader_${version}_macOS_universal.zip"
+          sha256="$(shasum -a 256 "dist/${zip_name}" | cut -d' ' -f1)"
+
+          sed -e "s/__VERSION__/${version}/g" -e "s/__SHA256__/${sha256}/g" \
+            homebrew/iso-auto-downloader.rb.tmpl > /tmp/iso-auto-downloader.rb
+
+          git clone "https://x-access-token:${HOMEBREW_TAP_GITHUB_TOKEN}@github.com/arnaudcharles/homebrew-tap.git" /tmp/tap
+          mkdir -p /tmp/tap/Casks
+          cp /tmp/iso-auto-downloader.rb /tmp/tap/Casks/iso-auto-downloader.rb
+
+          cd /tmp/tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/iso-auto-downloader.rb
+          # `git add` first, THEN diff the index against HEAD — plain `git
+          # diff` (no --cached) is blind to a brand-new, never-tracked file
+          # on an empty repo, so it always reports "no differences" even
+          # though there's a whole new file waiting to be committed.
+          if git diff --cached --quiet; then
+            echo "Cask unchanged, nothing to push"
+          else
+            git commit -m "iso-auto-downloader ${version}"
+            git push
+          fi
+        env:
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+
+  windows:
+    runs-on: windows-latest
+    needs: macos
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+
+      - name: Build windows/amd64
+        run: wails build -clean -platform windows/amd64
+      # windows-latest's Git Bash doesn't ship a `zip` binary — Compress-
+      # Archive is PowerShell's built-in equivalent, no extra install needed.
+      - name: Package windows/amd64
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v',''
+          $zipName = "iso-auto-downloader_${version}_windows_amd64.zip"
+          Compress-Archive -Path "build/bin/iso-auto-downloader.exe" -DestinationPath $zipName
+          Move-Item $zipName "$env:GITHUB_WORKSPACE/"
+
+      # windows/arm64 is a CGO cross-compile from an amd64 host — it needs
+      # the ARM64 VC++ toolset, which recent windows-latest images ship by
+      # default. If this step starts failing, install it explicitly first:
+      #   choco install visualstudio2022-buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.ARM64"
+      - name: Build windows/arm64
+        run: wails build -clean -platform windows/arm64
+      - name: Package windows/arm64
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v',''
+          $zipName = "iso-auto-downloader_${version}_windows_arm64.zip"
+          Compress-Archive -Path "build/bin/iso-auto-downloader.exe" -DestinationPath $zipName
+          Move-Item $zipName "$env:GITHUB_WORKSPACE/"
+
+      - name: Attach to release
+        shell: bash
+        run: gh release upload "${GITHUB_REF_NAME}" iso-auto-downloader_*_windows_*.zip --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Same pattern as the macOS job's Homebrew Cask step, and reuses the
+      # same PAT (it's a general repo-write token, not tap-specific) so
+      # there's no second secret to create. Skipped, not failed, until
+      # arnaudcharles/scoop-bucket exists.
+      - name: Publish Scoop manifest
+        shell: pwsh
+        run: |
+          if (-not $env:HOMEBREW_TAP_GITHUB_TOKEN) {
+            Write-Host "HOMEBREW_TAP_GITHUB_TOKEN not set, skipping Scoop manifest publish"
+            exit 0
+          }
+          $version = $env:GITHUB_REF_NAME -replace '^v',''
+          $sha256Amd64 = (Get-FileHash "iso-auto-downloader_${version}_windows_amd64.zip" -Algorithm SHA256).Hash.ToLower()
+          $sha256Arm64 = (Get-FileHash "iso-auto-downloader_${version}_windows_arm64.zip" -Algorithm SHA256).Hash.ToLower()
+
+          (Get-Content scoop/iso-auto-downloader.json.tmpl -Raw) `
+            -replace '__VERSION__', $version `
+            -replace '__SHA256_AMD64__', $sha256Amd64 `
+            -replace '__SHA256_ARM64__', $sha256Arm64 `
+            | Set-Content -Path iso-auto-downloader.json -NoNewline
+
+          git clone "https://x-access-token:$($env:HOMEBREW_TAP_GITHUB_TOKEN)@github.com/arnaudcharles/scoop-bucket.git" scoop-tap
+          New-Item -ItemType Directory -Force -Path scoop-tap/bucket | Out-Null
+          Copy-Item iso-auto-downloader.json scoop-tap/bucket/iso-auto-downloader.json -Force
+
+          Push-Location scoop-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add bucket/iso-auto-downloader.json
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Manifest unchanged, nothing to push"
+          } else {
+            git commit -m "iso-auto-downloader $version"
+            git push
+          }
+          Pop-Location
+        env:
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

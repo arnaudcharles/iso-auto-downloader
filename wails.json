@@ -1,0 +1,13 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "ISO Auto Downloader",
+  "outputfilename": "iso-auto-downloader",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Arnaud Charles",
+    "email": "arnaud.charles1992@outlook.com"
+  }
+}

@@ -1,0 +1,18 @@
+VERIFICATION
+Verification is intended to assist the Chocolatey moderators and community
+in verifying that this package's contents are trustworthy.
+
+This package downloads the official release archive directly from the
+project's GitHub Releases page at install time — it does not embed any
+binary inside the .nupkg itself.
+
+Download URL:
+https://github.com/arnaudcharles/iso-auto-downloader/releases/download/v0.1.0/iso-auto-downloader_0.1.0_windows_amd64.zip
+
+The SHA256 checksum used in chocolateyinstall.ps1 (checksum64) matches the
+one published in checksums.txt on the same release page:
+https://github.com/arnaudcharles/iso-auto-downloader/releases/tag/v0.1.0
+
+Source code, GoReleaser config, and the GitHub Actions workflow that
+produces this exact build are public in the project repository:
+https://github.com/arnaudcharles/iso-auto-downloader

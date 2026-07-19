@@ -1,0 +1,51 @@
+# GoReleaser wraps `wails build`'s output rather than compiling Go itself:
+# a Wails app needs the compiled frontend embedded and packaged into a
+# macOS .app bundle, so `wails build` (run below, in before.hooks) is the
+# real build step. GoReleaser Pro has a dedicated `prebuilt` builder for
+# externally-built binaries; on OSS GoReleaser the equivalent is a `skip:
+# true` build (required so the project has at least one build) plus a
+# `meta: true` archive (v2.6+) that packages files directly with no build
+# artifact of its own. See docs/architecture.md#macos-distribution.
+#
+# That same meta-archive workaround is also why Homebrew publishing isn't
+# configured here via GoReleaser's own `homebrew_casks` pipe: OSS GoReleaser
+# requires a real goos/goarch-tagged archive to generate a Cask from, and a
+# meta archive (by definition, no attached build) can never provide one —
+# confirmed against goreleaser v2.17.0, which fails with "no linux/macos
+# archives found matching..." no matter how the archive/build IDs are
+# wired together. (GoReleaser Pro's `prebuilt` builder solves this properly;
+# not worth the paid tier for one Cask.) The Cask is instead generated and
+# pushed to the tap by hand in .github/workflows/release.yml, using the
+# checksum GoReleaser computes for the same zip it just uploaded.
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    # A universal binary so one artifact covers Apple Silicon and Intel.
+    - wails build -clean -platform darwin/universal
+
+builds:
+  - id: iso-auto-downloader
+    skip: true
+    goos: [darwin]
+    goarch: [arm64]
+
+archives:
+  - id: iso-auto-downloader
+    meta: true
+    formats: [zip]
+    name_template: "iso-auto-downloader_{{ .Version }}_macOS_universal"
+    files:
+      - src: "build/bin/ISO Auto Downloader.app"
+        dst: "ISO Auto Downloader.app"
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  draft: true
+
+changelog:
+  use: github
+  sort: asc

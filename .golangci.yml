@@ -1,0 +1,14 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+  exclusions:
+    rules:
+      # Writes to an httptest.ResponseWriter in a test fixture handler can't
+      # meaningfully fail; checking them is noise, not safety.
+      - path: _test\.go
+        linters: [errcheck]
