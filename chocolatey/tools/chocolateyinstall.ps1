@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $packageName = 'iso-auto-downloader'
 $toolsDir    = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
-$version     = '0.1.0'
+$version     = '0.1.1'
 
 $packageArgs = @{
   packageName    = $packageName
