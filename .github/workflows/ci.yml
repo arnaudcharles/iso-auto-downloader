@@ -31,8 +31,9 @@ jobs:
       # "latest" resolved to a golangci-lint binary built with go1.24, which
       # can't load a config targeting this repo's go 1.25.0 — pinning to a
       # version confirmed (locally: golangci-lint v2.12.2, built go1.26.2)
-      # to actually support it.
-      - uses: golangci/golangci-lint-action@v6
+      # to actually support it. golangci-lint v2 also needs the action's v7
+      # (v6 hard-rejects any v2.x version string).
+      - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.12.2
 
