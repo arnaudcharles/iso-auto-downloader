@@ -12,9 +12,48 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var hrefRe = regexp.MustCompile(`href="([^"]+)"`)
+
+// maxFetchRetries bounds how many times a network-level failure (a dropped
+// connection, a TLS handshake timeout, a DNS hiccup) is retried before
+// giving up. Real report: Debian's Check failed on every architecture at
+// once with "TLS handshake timeout" — a transient blip, since a manual
+// retry moments later succeeds. internal/download already retries this
+// exact class of error for the file transfer itself; Check had no retry at
+// all, so a blip looked identical to "this ISO doesn't exist anymore".
+const maxFetchRetries = 3
+
+// fetchRetryDelay is a var (not a plain function) so tests can zero it out
+// instead of spending real wall-clock time on retries.
+var fetchRetryDelay = func(attempt int) time.Duration {
+	return time.Duration(attempt) * time.Second
+}
+
+// doWithRetry runs req and retries on a network-level failure (err != nil
+// from Do itself — a non-2xx response is a real answer, not a transient
+// failure, and isn't retried here). Safe to reuse req across attempts since
+// every caller in this package builds GET/HEAD requests with no body.
+func doWithRetry(req *http.Request) (*http.Response, error) {
+	var lastErr error
+	for attempt := 1; attempt <= maxFetchRetries; attempt++ {
+		resp, err := http.DefaultClient.Do(req)
+		if err == nil {
+			return resp, nil
+		}
+		lastErr = err
+		if attempt < maxFetchRetries {
+			select {
+			case <-time.After(fetchRetryDelay(attempt)):
+			case <-req.Context().Done():
+				return nil, req.Context().Err()
+			}
+		}
+	}
+	return nil, lastErr
+}
 
 // Resolve issues a HEAD request to url, following redirects, and returns the
 // final URL after redirects plus the final response headers. Used to turn a
@@ -26,7 +65,7 @@ func Resolve(ctx context.Context, url string) (finalURL string, header http.Head
 	if err != nil {
 		return "", nil, fmt.Errorf("scrape: build HEAD request for %s: %w", url, err)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := doWithRetry(req)
 	if err != nil {
 		return "", nil, fmt.Errorf("scrape: HEAD %s: %w", url, err)
 	}
@@ -58,7 +97,7 @@ func FetchString(ctx context.Context, url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("scrape: build request for %s: %w", url, err)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := doWithRetry(req)
 	if err != nil {
 		return "", fmt.Errorf("scrape: fetch %s: %w", url, err)
 	}

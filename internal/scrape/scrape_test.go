@@ -1,6 +1,87 @@
 package scrape
 
-import "testing"
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"sync/atomic"
+	"testing"
+	"time"
+)
+
+// TestMain disables the real retry backoff for every test in this package
+// (fetchRetryDelay defaults to a multi-second sleep in production, which
+// would make the retry tests below needlessly slow).
+func TestMain(m *testing.M) {
+	fetchRetryDelay = func(int) time.Duration { return 0 }
+	os.Exit(m.Run())
+}
+
+// TestFetchStringRetriesOnTransientNetworkErrorThenSucceeds is a regression
+// test for a real report: Debian's Check failed on every architecture at
+// once with "net/http: TLS handshake timeout" — a blip, since a manual
+// retry moments later succeeded. FetchString (and by extension every
+// provider's Check) previously gave up on the very first network-level
+// failure.
+func TestFetchStringRetriesOnTransientNetworkErrorThenSucceeds(t *testing.T) {
+	var attempt int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if atomic.AddInt32(&attempt, 1) <= 2 {
+			// Simulate a connection-level failure (what a TLS handshake
+			// timeout looks like to the client: Do() returns an error, no
+			// response at all) by hijacking and closing without writing
+			// anything.
+			hj, ok := w.(http.Hijacker)
+			if !ok {
+				t.Fatal("test server ResponseWriter doesn't support hijacking")
+			}
+			conn, _, err := hj.Hijack()
+			if err != nil {
+				t.Fatal(err)
+			}
+			_ = conn.Close()
+			return
+		}
+		fmt.Fprint(w, "ok")
+	}))
+	defer srv.Close()
+
+	body, err := FetchString(context.Background(), srv.URL)
+	if err != nil {
+		t.Fatalf("FetchString() error = %v", err)
+	}
+	if body != "ok" {
+		t.Errorf("FetchString() = %q, want %q", body, "ok")
+	}
+	if got := atomic.LoadInt32(&attempt); got != 3 {
+		t.Errorf("attempts = %d, want 3 (2 failures + 1 success)", got)
+	}
+}
+
+// TestFetchStringGivesUpAfterMaxRetries confirms a persistently unreachable
+// host still eventually returns an error rather than retrying forever.
+func TestFetchStringGivesUpAfterMaxRetries(t *testing.T) {
+	var attempt int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&attempt, 1)
+		hj, _ := w.(http.Hijacker)
+		conn, _, err := hj.Hijack()
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = conn.Close()
+	}))
+	defer srv.Close()
+
+	if _, err := FetchString(context.Background(), srv.URL); err == nil {
+		t.Fatal("FetchString() error = nil, want a network error")
+	}
+	if got := atomic.LoadInt32(&attempt); got != maxFetchRetries {
+		t.Errorf("attempts = %d, want %d", got, maxFetchRetries)
+	}
+}
 
 func TestLooksLikeVersion(t *testing.T) {
 	cases := []struct {
