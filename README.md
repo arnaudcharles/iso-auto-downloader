@@ -93,9 +93,11 @@ scoop install arnaudcharles/iso-auto-downloader
 
 #### Chocolatey
 
-You can also install it from Chocolatey:
+You can also install it from [Chocolatey](https://community.chocolatey.org/packages/iso-auto-downloader/0.1.0)
 
-[iso-auto-downloader 0.1.0 on Chocolatey Community](https://community.chocolatey.org/packages/iso-auto-downloader/0.1.0)
+```powershell
+choco install iso-auto-downloader
+```
 
 Or download a release artifact from [GitHub Releases](https://github.com/arnaudcharles/iso-auto-downloader/releases).
 
