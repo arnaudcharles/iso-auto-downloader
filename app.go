@@ -26,6 +26,7 @@ import (
 	_ "github.com/arnaudcharles/iso-auto-downloader/internal/provider/manjaro"
 	_ "github.com/arnaudcharles/iso-auto-downloader/internal/provider/medicat"
 	_ "github.com/arnaudcharles/iso-auto-downloader/internal/provider/memtest86plus"
+	_ "github.com/arnaudcharles/iso-auto-downloader/internal/provider/omarchy"
 	_ "github.com/arnaudcharles/iso-auto-downloader/internal/provider/opensuse"
 	_ "github.com/arnaudcharles/iso-auto-downloader/internal/provider/parrotos"
 	_ "github.com/arnaudcharles/iso-auto-downloader/internal/provider/proxmox"

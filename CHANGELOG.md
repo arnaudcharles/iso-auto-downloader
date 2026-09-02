@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Omarchy (Linux) as a native provider, with its brand mark in the ISO list. It starts unchecked —
+  the image is a single ~6 GB file — so enable it in Settings to see it on the main screen. Omarchy
+  publishes neither a directory listing nor a GitHub release asset for its ISO, so Check reads the
+  omarchy.org homepage — the only place the current build is stated — and downloads verify against
+  the `omarchy-<version>.iso.sha256` file served next to the image.
+
 ## [0.1.1] - 2026-07-20
 
 ### Fixed

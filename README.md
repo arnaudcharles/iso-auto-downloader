@@ -11,12 +11,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/qoomon/starline">
-    <img src="https://starlines.qoo.monster/assets/arnaudcharles/iso-auto-downloader" alt="starline" />
-  </a>
-</p>
-
-<p align="center">
   <img src="https://img.shields.io/badge/Platform-%20macOS%20%7C%20%20Windows-blue" alt="Platform" />
   <img src="https://img.shields.io/badge/License-GPL%202.0-green" alt="License" />
   <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go&logoColor=white&labelColor=2C3E50" alt="Go" />

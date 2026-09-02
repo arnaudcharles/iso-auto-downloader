@@ -26,6 +26,12 @@ var legacyRestrictions = map[string]legacyVariantRestriction{
 	"kalilinux":     {enabled: false},
 	"memtest86plus": {enabled: false},
 
+	// Not from that original list: Omarchy ships a single ~6 GB image, more
+	// than most entries here cost, and it's a niche pick rather than a
+	// staple of a rescue drive — so it starts opt-in, one checkbox away in
+	// Settings like the three above.
+	"omarchy": {enabled: false},
+
 	"manjaro":    {enabled: true, edition: []string{"kde", "xfce"}},
 	"debian":     {enabled: true, arch: []string{"amd64"}},
 	"rockylinux": {enabled: true, edition: []string{"dvd", "boot", "minimal"}},
