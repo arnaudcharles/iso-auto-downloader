@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.1.2] - 2026-09-04
 
 ### Added
 
@@ -13,6 +13,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   publishes neither a directory listing nor a GitHub release asset for its ISO, so Check reads the
   omarchy.org homepage — the only place the current build is stated — and downloads verify against
   the `omarchy-<version>.iso.sha256` file served next to the image.
+
+### Changed
+
+- Releases now publish to Homebrew, Scoop and Chocolatey from a single `v*` tag. Chocolatey was
+  previously packaged by hand, and its files had drifted — the nuspec said 0.1.1 while
+  VERIFICATION.txt still pointed at the v0.1.0 archive; all three channels now render from
+  templates with the version taken from the tag.
+- The GitHub Release is published directly instead of as a draft. Every package manager bakes a
+  `releases/download/<tag>/...` URL into its manifest, and a draft's asset URLs return 404 for
+  everyone but the repo owner, so `brew install --cask` was broken between a tag and its manual
+  publication. Pull requests now run the full release build in exchange.
 
 ## [0.1.1] - 2026-07-20
 
