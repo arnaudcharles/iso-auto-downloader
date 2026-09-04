@@ -51,3 +51,71 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run build
+
+  # A tag release publishes the GitHub Release from the macOS job and
+  # only builds Windows afterwards (see release.yml). Now that the
+  # release is published immediately rather than as a draft, that order
+  # is unforgiving: a Windows build that breaks after merge leaves a
+  # published release with no Windows zips, and the Chocolatey job never
+  # runs. So both halves of the release build are exercised on every
+  # pull request, while there is still nothing published to unpick.
+  release-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # GoReleaser reads git history and tags to derive the snapshot
+          # version; a shallow clone makes it guess wrong or fail.
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+      # --snapshot runs the real pipeline — including the
+      # `wails build -platform darwin/universal` before-hook that
+      # produces the .app bundle — but publishes nothing and needs no tag.
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --snapshot --clean
+      - name: Check the macOS archive was actually produced
+        run: |
+          set -euo pipefail
+          ls -la dist/
+          # A meta archive is easy to misconfigure into producing nothing
+          # at all while GoReleaser still exits 0, so assert the artifact.
+          test -n "$(find dist -name 'iso-auto-downloader_*_macOS_universal.zip' -print -quit)"
+
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+      - name: Build windows/amd64
+        run: wails build -clean -platform windows/amd64
+      - name: Build windows/arm64
+        run: wails build -clean -platform windows/arm64
+      # Renders and packs the Chocolatey package with a dummy checksum,
+      # using the same chocolatey/render.ps1 the publish job runs, so a
+      # broken nuspec or template fails here rather than after a release
+      # has already gone out. Nothing is pushed.
+      - name: Check the Chocolatey package builds
+        shell: pwsh
+        run: |
+          ./chocolatey/render.ps1 -Version '0.0.0-ci' -Sha256 ('0' * 64) -OutDir choco-pkg
+          choco pack choco-pkg/iso-auto-downloader.nuspec --outputdirectory choco-pkg
+          if ($LASTEXITCODE -ne 0) { throw 'choco pack failed' }

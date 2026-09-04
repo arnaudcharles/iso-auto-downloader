@@ -1,0 +1,75 @@
+name: Chocolatey
+
+# Called by release.yml once the Windows zips are attached to the release,
+# never on its own trigger. It can't key off `release: published`: with
+# draft: false (see .goreleaser.yaml) GoReleaser publishes the release from
+# the macOS job, which fires that event before the Windows job has uploaded
+# the zip this package points at — the download below would race it and
+# lose.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Release tag to publish (e.g. v0.1.2)"
+        required: true
+        type: string
+  # Manual resubmission, for a push that failed Chocolatey moderation and
+  # needs to go again after a fix.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish to Chocolatey (e.g. v0.1.2)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Skipped, not failed, until the one-time setup exists — same pattern
+      # as the Homebrew Cask and Scoop steps in release.yml. Get the key
+      # from https://community.chocolatey.org/account and store it as the
+      # CHOCO_API_KEY repository secret.
+      - name: Publish Chocolatey package
+        shell: pwsh
+        run: |
+          if (-not $env:CHOCO_API_KEY) {
+            Write-Host "CHOCO_API_KEY not set, skipping Chocolatey publish"
+            exit 0
+          }
+
+          $version = $env:TAG -replace '^v',''
+          $zip = "iso-auto-downloader_${version}_windows_amd64.zip"
+
+          # Hash the asset actually attached to the release rather than
+          # trusting a value typed by hand — the whole point of automating
+          # this. It is also the exact file the install script will send
+          # users to.
+          gh release download $env:TAG --pattern $zip --dir .
+          if ($LASTEXITCODE -ne 0) { throw "could not download $zip from release $env:TAG" }
+          $sha256 = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          Write-Host "$zip sha256=$sha256"
+
+          # Rendering lives in chocolatey/render.ps1 so the pull request
+          # build check exercises the very same script that publishes here.
+          ./chocolatey/render.ps1 -Version $version -Sha256 $sha256 -OutDir choco-pkg
+
+          choco pack choco-pkg/iso-auto-downloader.nuspec --outputdirectory choco-pkg
+          if ($LASTEXITCODE -ne 0) { throw "choco pack failed" }
+
+          # No --skip-duplicate equivalent exists on `choco push`: re-pushing
+          # a version already on the feed fails, and that failure is worth
+          # surfacing rather than swallowing.
+          choco push "choco-pkg/iso-auto-downloader.$version.nupkg" --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY
+          if ($LASTEXITCODE -ne 0) { throw "choco push failed" }
+
+          Write-Host "Pushed iso-auto-downloader $version to Chocolatey — it now sits in moderation until approved."
+        env:
+          CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+          TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
