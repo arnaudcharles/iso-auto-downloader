@@ -32,6 +32,7 @@ func TestDefaultISOConfigForCuratedList(t *testing.T) {
 		{"fedora", false},
 		{"kalilinux", false},
 		{"memtest86plus", false},
+		{"omarchy", false},
 		{"ubuntu", true},
 		{"hirensbootcdpe", true},
 		{"xcpng", true},
