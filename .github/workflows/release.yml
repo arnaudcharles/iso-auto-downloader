@@ -168,3 +168,13 @@ jobs:
           Pop-Location
         env:
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+
+  # Runs only after the Windows job has attached the zips: the package
+  # points at iso-auto-downloader_<version>_windows_amd64.zip and hashes
+  # the very asset on the release, so it has to exist first.
+  chocolatey:
+    needs: windows
+    uses: ./.github/workflows/chocolatey.yml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit

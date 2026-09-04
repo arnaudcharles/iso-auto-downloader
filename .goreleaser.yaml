@@ -44,7 +44,15 @@ checksum:
   name_template: "checksums.txt"
 
 release:
-  draft: true
+  # Published straight away, not as a draft. Every downstream package
+  # manager (Homebrew Cask, Scoop, Chocolatey) bakes in a
+  # releases/download/<tag>/... URL, and a draft's asset URLs 404 for
+  # everyone but the repo owner — so a draft meant `brew install` was
+  # broken until the release was published by hand, and a Chocolatey
+  # submission couldn't be verified by a moderator at all. The pull
+  # request build check (.github/workflows/ci.yml) is what guards the
+  # release now, instead of a manual gate after the fact.
+  draft: false
 
 changelog:
   use: github
