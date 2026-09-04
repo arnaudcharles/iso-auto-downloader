@@ -1,0 +1,96 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "timezone": "Europe/Paris",
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    {
+      "description": "One PR for all workflow action bumps - they are rarely interesting individually.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "Frontend minor/patch together; majors stay separate so a React or Vite jump gets read properly.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "frontend (minor and patch)"
+    },
+    {
+      "description": "simple-icons ships new brand marks constantly and every provider icon comes from it, so keep it moving on its own.",
+      "matchPackageNames": [
+        "simple-icons"
+      ],
+      "groupName": "simple-icons"
+    },
+    {
+      "description": "The Wails CLI pinned in the workflows and the Wails library in go.mod must move together: a CLI that generates bindings against a different runtime than go.mod compiles is exactly the mismatch the build check would only catch late.",
+      "matchPackageNames": [
+        "github.com/wailsapp/wails/v2"
+      ],
+      "groupName": "wails"
+    },
+    {
+      "description": "golangci-lint is pinned deliberately (see ci.yml: 'latest' resolved to a binary that could not load a config targeting this repo's Go version). Bumps are welcome but want a human look.",
+      "matchPackageNames": [
+        "golangci/golangci-lint"
+      ],
+      "automerge": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Wails CLI version pinned in the workflows (go install ...@vX.Y.Z)",
+      "matchStrings": [
+        "go install github\\.com/wailsapp/wails/v2/cmd/wails@(?<currentValue>v[\\d.]+)"
+      ],
+      "depNameTemplate": "github.com/wailsapp/wails/v2",
+      "datasourceTemplate": "go",
+      "fileMatch": [
+        "^\\.github/workflows/.+\\.ya?ml$"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "golangci-lint version handed to golangci-lint-action",
+      "matchStrings": [
+        "golangci/golangci-lint-action@\\S+\\s+with:\\s+version:\\s+(?<currentValue>v[\\d.]+)"
+      ],
+      "depNameTemplate": "golangci/golangci-lint",
+      "datasourceTemplate": "github-releases",
+      "fileMatch": [
+        "^\\.github/workflows/.+\\.ya?ml$"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Node major used by setup-node",
+      "matchStrings": [
+        "node-version:\\s+(?<currentValue>\\d+)"
+      ],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version",
+      "versioningTemplate": "node",
+      "fileMatch": [
+        "^\\.github/workflows/.+\\.ya?ml$"
+      ]
+    }
+  ]
+}
